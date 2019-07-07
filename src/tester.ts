@@ -107,13 +107,13 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
     callback(helpers);
   };
 
-  public given = (callback: (helpers: GivenHandlers<E, Application>) => void): void => {
+  public given = async (callback: (helpers: GivenHandlers<E, Application>) => void): Promise<void> => {
     this.step = "GIVEN";
     const helpers: GivenHandlers<E, Application> = {
       enter: this.playSequence,
       application: this.enhancer((this.store.dispatch as unknown) as Dispatch, {} as State)
     };
-    callback(helpers);
+    await callback(helpers);
   };
 
   public when = async (callback: (helpers: WhenHandlers<Application>) => void): Promise<void> => {

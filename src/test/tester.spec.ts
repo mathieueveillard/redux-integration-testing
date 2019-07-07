@@ -65,9 +65,13 @@ describe("Test of getTester()", () => {
 
   it("Should allow testing a simple application asynchronously", done => {
     const asyncEnhancer: Enhancer<Dispatch, AppState, Application> = (dispatch: Dispatch, state: AppState) => {
-      async function incrementCounter(): Promise<void> {
-        dispatch(createIncrementCounterAction());
-        await new Promise(resolve => setTimeout(resolve, 1));
+      function incrementCounter(): Promise<void> {
+        return new Promise(resolve =>
+          setTimeout(() => {
+            dispatch(createIncrementCounterAction());
+            resolve();
+          }, 100)
+        );
       }
       function expectCounterToEqual(n: number): void {
         expect(state.counter).toEqual(n);
@@ -85,8 +89,9 @@ describe("Test of getTester()", () => {
     });
 
     t.given(({ enter }) => enter("A_COUNTER_WITH_VALUE_SET_TO_2"))
+      .and(({ application }) => application.incrementCounter())
       .when(({ application }) => application.incrementCounter())
-      .then(({ application }) => application.expectCounterToEqual(3))
+      .then(({ application }) => application.expectCounterToEqual(4))
       .finally(done);
   });
 

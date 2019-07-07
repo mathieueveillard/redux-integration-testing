@@ -1,6 +1,6 @@
 interface Sequentialisable<C, G, W, T> {
   configure(args: C): void;
-  given(args: G): void;
+  given(args: G): Promise<void>;
   when(args: W): Promise<void>;
   then(args: T): void;
 }
@@ -21,8 +21,7 @@ function atInitialStep<C, G, W, T>(object: Sequentialisable<C, G, W, T>): Tester
       return atConfigurationStep(object);
     },
     given: (args: G) => {
-      object.given(args);
-      return atGivenStep(object);
+      return atGivenStep(object, object.given(args));
     }
   };
 }
@@ -39,8 +38,7 @@ function atConfigurationStep<C, G, W, T>(object: Sequentialisable<C, G, W, T>): 
       return atConfigurationStep(object);
     },
     given: (args: G) => {
-      object.given(args);
-      return atGivenStep(object);
+      return atGivenStep(object, object.given(args));
     }
   };
 }
@@ -50,14 +48,13 @@ export interface TesterAtGivenStep<G, W, T> {
   when(args: W): TesterAtWhenStep<W, T>;
 }
 
-function atGivenStep<C, G, W, T>(object: Sequentialisable<C, G, W, T>): TesterAtGivenStep<G, W, T> {
+function atGivenStep<C, G, W, T>(object: Sequentialisable<C, G, W, T>, promise: Promise<void>): TesterAtGivenStep<G, W, T> {
   return {
     and: (args: G) => {
-      object.given(args);
-      return atGivenStep(object);
+      return atGivenStep(object, promise.then(() => object.given(args)));
     },
     when: (args: W) => {
-      return atWhenStep(object, object.when(args));
+      return atWhenStep(object, promise.then(() => object.when(args)));
     }
   };
 }
