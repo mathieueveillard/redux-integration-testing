@@ -7,11 +7,7 @@ export type Sequence = AnyAction[];
 
 type EntryPoints = Record<string, Sequence>;
 
-type Actuator = (...args: any[]) => void | Promise<void>;
-
-type Sensor = (...args: any[]) => void;
-
-export type PageModel = { [name: string]: Actuator | Sensor | PageModel };
+export type PageModel = Object;
 
 export type Enhancer<Dispatch, State, Application extends PageModel> = (
   dispatch: Dispatch,
