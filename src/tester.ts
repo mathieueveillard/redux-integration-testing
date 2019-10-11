@@ -1,11 +1,7 @@
-import { Store, AnyAction, Dispatch as ReduxDispatch, Middleware, MiddlewareAPI } from "redux";
+import { Store, Dispatch as ReduxDispatch, Middleware, MiddlewareAPI } from "redux";
 import chalk from "chalk";
 import { cloneDeep } from "lodash";
 import { sequentialise } from "./sequentialiser";
-
-export type Sequence = AnyAction[];
-
-type EntryPoints = Record<string, Sequence>;
 
 export type PageModel = Object;
 
@@ -14,9 +10,9 @@ export type Enhancer<Dispatch, State, Application extends PageModel> = (
   state: State
 ) => Application;
 
-interface GetTesterArguments<State, E extends EntryPoints, Dispatch, Application extends PageModel> {
-  getStore: (...additionalMiddlewares: Middleware[]) => Store<State>;
-  entryPoints: E;
+interface GetTesterArguments<State, EntryPoints, Dispatch, Application extends PageModel> {
+  getStore: (...additionalMiddlewares: Middleware[]) => Store<State> & { dispatch: Dispatch };
+  entryPoints: EntryPoints;
   enhancer: Enhancer<Dispatch, State, Application>;
 }
 
@@ -29,8 +25,8 @@ export interface ConfigurationHandlers {
   };
 }
 
-export interface GivenHandlers<E extends EntryPoints, Application> {
-  enter: (sequence: keyof E) => void;
+export interface GivenHandlers<EntryPoints, Application> {
+  enter: (sequence: keyof EntryPoints) => void;
   application: Application;
 }
 
@@ -40,7 +36,7 @@ export interface WhenHandlers<Application> {
 
 export interface ThenHandlers<Application> {
   application: Application;
-  actions: AnyAction[];
+  actions: any[];
 }
 
 export const noop = () => {
@@ -51,16 +47,16 @@ const defaultActionLogger: Logger = (s: string) => console.log(chalk.black.bgWhi
 
 const defaultStateLogger: Logger = (s: string) => console.log(chalk.black.bgWhite.bold(" STATE "), "\n", s);
 
-class Tester<State, E extends EntryPoints, Dispatch, Application extends PageModel> {
+class Tester<State, EntryPoints extends Record<string, any>, Dispatch, Application extends PageModel> {
   private step: "CONFIGURE" | "GIVEN" | "WHEN" | "THEN" = "CONFIGURE";
-  private store: Store<State>;
-  private entryPoints: E;
+  private store: Store<State> & { dispatch: Dispatch };
+  private entryPoints: EntryPoints;
   private enhancer: Enhancer<Dispatch, State, Application>;
-  private actions: AnyAction[] = [];
+  private actions: any[] = [];
   private actionLogger: Logger = noop;
   private stateLogger: Logger = noop;
 
-  private logActionsMiddleware: Middleware = (_: MiddlewareAPI) => (next: ReduxDispatch) => (action: AnyAction) => {
+  private logActionsMiddleware: Middleware = (_: MiddlewareAPI) => (next: ReduxDispatch) => (action: any) => {
     if (this.step === "WHEN") {
       this.actions.push(action);
       this.actionLogger(action.toString());
@@ -68,7 +64,7 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
     return next(action);
   };
 
-  constructor({ getStore, entryPoints, enhancer }: GetTesterArguments<State, E, Dispatch, Application>) {
+  constructor({ getStore, entryPoints, enhancer }: GetTesterArguments<State, EntryPoints, Dispatch, Application>) {
     this.store = getStore(this.logActionsMiddleware);
     this.enhancer = enhancer;
     this.entryPoints = entryPoints;
@@ -83,8 +79,8 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
     });
   };
 
-  private playSequence = (sequence: keyof E): void => {
-    this.entryPoints[sequence].forEach((action: AnyAction) => {
+  private playSequence = (sequence: keyof EntryPoints): void => {
+    this.entryPoints[sequence].forEach((action: any) => {
       this.store.dispatch(action);
     });
   };
@@ -103,9 +99,11 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
     callback(helpers);
   };
 
-  public given = async (callback: (helpers: GivenHandlers<E, Application>) => void | Promise<void>): Promise<void> => {
+  public given = async (
+    callback: (helpers: GivenHandlers<EntryPoints, Application>) => void | Promise<void>
+  ): Promise<void> => {
     this.step = "GIVEN";
-    const helpers: GivenHandlers<E, Application> = {
+    const helpers: GivenHandlers<EntryPoints, Application> = {
       enter: this.playSequence,
       application: this.enhancer((this.store.dispatch as unknown) as Dispatch, {} as State)
     };
@@ -130,8 +128,8 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
   };
 }
 
-export function getTester<State, E extends EntryPoints, Dispatch, Application extends PageModel>(
-  args: GetTesterArguments<State, E, Dispatch, Application>
+export function getTester<State, EntryPoints, Dispatch, Application extends PageModel>(
+  args: GetTesterArguments<State, EntryPoints, Dispatch, Application>
 ) {
   return sequentialise(new Tester(args));
 }
