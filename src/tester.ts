@@ -103,7 +103,7 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
     callback(helpers);
   };
 
-  public given = async (callback: (helpers: GivenHandlers<E, Application>) => void): Promise<void> => {
+  public given = async (callback: (helpers: GivenHandlers<E, Application>) => void | Promise<void>): Promise<void> => {
     this.step = "GIVEN";
     const helpers: GivenHandlers<E, Application> = {
       enter: this.playSequence,
@@ -112,7 +112,7 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
     await callback(helpers);
   };
 
-  public when = async (callback: (helpers: WhenHandlers<Application>) => void): Promise<void> => {
+  public when = async (callback: (helpers: WhenHandlers<Application>) => void | Promise<void>): Promise<void> => {
     this.step = "WHEN";
     const helpers: WhenHandlers<Application> = {
       application: this.enhancer((this.store.dispatch as unknown) as Dispatch, {} as State)
@@ -120,7 +120,7 @@ class Tester<State, E extends EntryPoints, Dispatch, Application extends PageMod
     await callback(helpers);
   };
 
-  public then = (callback: (helpers: ThenHandlers<Application>) => void): void => {
+  public then = (callback: (helpers: ThenHandlers<Application>) => void | Promise<void>): void => {
     this.step = "THEN";
     const helpers: ThenHandlers<Application> = {
       application: this.enhancer((this.store.dispatch as unknown) as Dispatch, cloneDeep(this.store.getState())),
