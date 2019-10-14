@@ -1,10 +1,10 @@
-import { getTester, Sequence, PageModel, Enhancer } from "../tester";
+import { getTester, PageModel, Enhancer } from "../tester";
 import { getStore, createIncrementCounterAction } from "./Counter";
 import { AppState } from "./Counter/state";
 import { Dispatch } from "redux";
 import { noop } from "../tester";
 
-const A_COUNTER_WITH_VALUE_SET_TO_2: Sequence = [createIncrementCounterAction(), createIncrementCounterAction()];
+const A_COUNTER_WITH_VALUE_SET_TO_2 = [createIncrementCounterAction(), createIncrementCounterAction()];
 
 const entryPoints = {
   A_COUNTER_WITH_VALUE_SET_TO_2
