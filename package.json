@@ -1,6 +1,6 @@
 {
   "name": "redux-integration-testing",
-  "version": "0.2.0-alpha",
+  "version": "0.2.1-alpha",
   "description": "A lightweight framework for integration testing with Redux",
   "main": "lib/index.js",
   "scripts": {
