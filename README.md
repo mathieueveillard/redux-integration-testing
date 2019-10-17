@@ -5,6 +5,7 @@
 - [Handbook](#handbook)
   - [Using a page model](#using-a-page-model)
   - [Mocking network APIs](#mocking-network-apis)
+  - [Working with asynchronous code](#working-with-asynchronous-code)
   - [Debugging](#debugging)
   - [Skipping the when step](#skipping-the-when-step)
 
@@ -118,6 +119,8 @@ rather than
 t.then(({ state }) => expect(state.counter).toEqual(3));
 ```
 
+The examples provided here use objects and functions, but you could of course use classes. It is a common, usefull though not required practice as soon as you need to work with a state. Let's make it perfectly unambiguous: "state" refers here to the state of the page model, not the state of the application under test.
+
 ### Mocking network APIs
 
 Mocking APIs is out of the scope of `redux-integration-testing`. An easy way to proceed is to inject APIs at the bootstrap of your application, placing them in the scope of the `getStore` function:
@@ -141,6 +144,41 @@ const t = getTester<AppState, typeof entryPoints, Dispatch, Application>({
   getStore: makeGetStore(mockedApi),
   entryPoints,
   enhancer
+});
+```
+
+### Working with asynchronous code
+
+`redux-integration-testing` works natively with asynchronous code:
+
+```TypeScript
+const asyncEnhancer: Enhancer<Dispatch, AppState, Application> = (dispatch: Dispatch, state: AppState) => {
+  async function incrementCounter(): Promise<void> {
+    dispatch(createIncrementCounterAction());
+    await Promise.resolve(); // Used here to simulate asynchronism
+  }
+  async function expectCounterToEqual(n: number): Promise<void> {
+    expect(state.counter).toEqual(n);
+    await Promise.resolve(); // Used here to simulate asynchronism
+  }
+  return {
+    incrementCounter,
+    expectCounterToEqual
+  };
+};
+
+it("Should allow testing an application asynchronously", done => {
+  const t = getTester<AppState, typeof entryPoints, Dispatch, Application>({
+    getStore,
+    entryPoints,
+    enhancer: asyncEnhancer
+  });
+
+  t.given(({ enter }) => enter("A_COUNTER_WITH_VALUE_SET_TO_2"))
+    .and(({ application }) => application.incrementCounter())
+    .when(({ application }) => application.incrementCounter())
+    .then(({ application }) => application.expectCounterToEqual(4))
+    .finally(done);
 });
 ```
 

@@ -48,7 +48,10 @@ export interface TesterAtGivenStep<G, W, T> {
   when(args: W): TesterAtWhenStep<W, T>;
 }
 
-function atGivenStep<C, G, W, T>(object: Sequentialisable<C, G, W, T>, promise: Promise<void>): TesterAtGivenStep<G, W, T> {
+function atGivenStep<C, G, W, T>(
+  object: Sequentialisable<C, G, W, T>,
+  promise: Promise<void>
+): TesterAtGivenStep<G, W, T> {
   return {
     and: (args: G) => {
       return atGivenStep(object, promise.then(() => object.given(args)));

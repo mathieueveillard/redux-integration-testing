@@ -50,7 +50,7 @@ describe("Test of getTester()", () => {
       .finally(done);
   });
 
-  it("Should allow testing a simple application using a page model", done => {
+  it("Should allow testing an application using a page model", done => {
     const t = getTester<AppState, typeof entryPoints, Dispatch, Application>({
       getStore,
       entryPoints,
@@ -63,18 +63,15 @@ describe("Test of getTester()", () => {
       .finally(done);
   });
 
-  it("Should allow testing a simple application asynchronously", done => {
+  it("Should allow testing an application asynchronously", done => {
     const asyncEnhancer: Enhancer<Dispatch, AppState, Application> = (dispatch: Dispatch, state: AppState) => {
-      function incrementCounter(): Promise<void> {
-        return new Promise(resolve =>
-          setTimeout(() => {
-            dispatch(createIncrementCounterAction());
-            resolve();
-          }, 100)
-        );
+      async function incrementCounter(): Promise<void> {
+        dispatch(createIncrementCounterAction());
+        await Promise.resolve();
       }
-      function expectCounterToEqual(n: number): void {
+      async function expectCounterToEqual(n: number): Promise<void> {
         expect(state.counter).toEqual(n);
+        await Promise.resolve();
       }
       return {
         incrementCounter,
